@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./static/CSS/site.css">
+    
+    <title>Cheetah VS Lion</title>
+</head>
+
+
+
+<body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            
+
+                <div class="navbar-header">
+                    <img id="cheetahImg" src="./static/img/cheetah.png" alt="Cheetah Image" class="navbar-image">
+                    <a href="/Home/Index" class="navbar-brand">Lion VS Cheetah</a>
+                    <img id="lionImg" src="./static/img/lion.png" alt="Lion Image" class="navbar-image">
+                </div>
+
+            
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                </ul>
+            </div>
+        </div>
+    </div>
+   
+
+    <div class="container">
+
+        <div id="left-container">
+            <!-- Form for uploading images -->
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" id="image-upload" accept="image/*">
+                <br />
+                <br />
+                <button id="uploadBtn" type="button" onclick="uploadImage()">Upload Image</button>
+            </form>
+
+            <br />
+            <br />
+
+            <!-- Display uploaded image -->
+            <div id="image-container">
+                <img id="uploaded-image" src="#" alt="Uploaded Image" style="max-width: 100%; height: auto; display: none;">
+            </div>
+        </div>
+
+        
+
+        <div class="right-content-wrapper">
+            <!-- Button for prediction -->
+            <div class="centered-content">
+                <button type="button" id="predict-button" style="display: none;" onclick="predictAnimal()">Predict</button>
+            </div>
+
+            <!-- Display prediction result -->
+            <div id="prediction-result" class="centered-content" style="display: none;">
+                <h2>Prediction Result</h2>
+                <p id="result-text"></p>
+            </div>
+        </div>
+
+        <div class="centered-content">
+            <button type="button" id="tryNew" onclick="tryNewImage()" style="display: none;">Try New Image</button>
+        </div>
+
+        <div class="right-content-wrapper">
+            <div id="indexParagraph">
+                <h2>What does this achieve?</h2>
+                <p>This web application involes the use of a hidden python machine learning system that has been put through an 
+                   extensive training to learn the key differences between Lions and Cheetahs. To use this tool, please upload a
+                   photo of a lion or cheetah of your choice, our model will then calculate
+                   the predict the animal of your uploaded image. </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function uploadImage() {
+            var input = document.getElementById('image-upload');
+            var imageContainer = document.getElementById('image-container');
+            var uploadedImage = document.getElementById('uploaded-image');
+            var predictButton = document.getElementById('predict-button');
+            var predictionResult = document.getElementById('prediction-result');
+            var uploadForm = document.getElementById('upload-form');
+            var infoPara = document.getElementById('indexParagraph');
+            
+
+            var file = input.files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function () {
+                uploadedImage.src = reader.result;
+                imageContainer.style.display = 'block'; // Show the image container
+                predictButton.style.display = 'block'; // Show the predict button
+                predictionResult.style.display = 'none'; // Hide the prediction result
+                uploadedImage.style.display = 'block'; //Show uploaded image
+                uploadForm.style.display = 'none'; // Hide the upload form
+                infoPara.style.display = 'none';
+                
+            };
+
+            if (file) {
+                reader.readAsDataURL(file); // Read the image file as a data URL.
+            } else {
+                uploadedImage.src = '#';
+                imageContainer.style.display = 'none'; // Hide the image container if no image is selected.
+                predictButton.style.display = 'none'; // Hide the predict button if no image is selected.
+                predictionResult.style.display = 'none'; // Hide the prediction result if no image is selected.
+            }
+        }
+
+        function predictAnimal() {
+    var resultText = document.getElementById('result-text');
+    var predictionResult = document.getElementById('prediction-result');
+    var tryNewBtn = document.getElementById('tryNew');
+    var uploadedImage = document.getElementById('uploaded-image');
+
+    tryNewBtn.style.display = 'block'; // Show the try new image button
+
+    // Get the image data as a base64 string
+    var imageData = uploadedImage.src.split(',')[1];
+
+    // Send a POST request to the Flask server with the image data
+    fetch('/predict', {
+        method: 'POST',
+        body: JSON.stringify({ image_data: imageData }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            // Handle the error case, for example, display the error message to the user
+            console.error('Error:', data.error);
+        } else {
+            // Handle the successful prediction result here
+            var lionProbability = data[0][0]; // First element is Lion probability
+            var cheetahProbability = data[0][1]; // Second element is Cheetah probability
+
+            // Determine which probability is closer to 1 and set the predicted animal accordingly
+            var predictedAnimal = Math.abs(1 - lionProbability) < Math.abs(1 - cheetahProbability) ? 'Lion' : 'Cheetah';
+            resultText.textContent = 'Predicted Animal: ' + predictedAnimal;
+            predictionResult.style.display = 'block'; // Show the prediction result.
+        }
+    })
+    .catch(error => {
+        // Handle fetch or network errors here
+        console.error('Fetch Error:', error);
+    });
+}
+
+
+
+
+
+        function tryNewImage() {
+            location.reload(); // Reloads the page, effectively resetting the image and prediction
+        }
+    </script>
+</body>
+
+</html>
